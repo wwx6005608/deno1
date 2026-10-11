@@ -1,21 +1,31 @@
-﻿name: CI
+﻿name: CI/CD
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     steps:
-      - name: 拉取代码
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: 安装 JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Maven 打包
-        run: mvn clean package -DskipTests
+      - run: mvn clean package -DskipTests
+
+      - name: 构建 Docker 镜像
+        run: docker build -t ghcr.io/wwx6005608/deno1:latest .
+
+      - name: 登录 GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: wwx6005608
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 推送镜像到 GHCR
+        run: docker push ghcr.io/wwx6005608/deno1:latest
